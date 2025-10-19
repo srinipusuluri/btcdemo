@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Escrow {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  seller    String
+  buyer     String
+  token     String
+  amount    String   // Store as string for BigInt precision
+  timeout   Int      // Timeout timestamp
+  status    String   // "Pending", "Funded", "Confirmed", "Cancelled", "TimedOut"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model IndexingState {
+  id                  String @id @default("main")
+  lastProcessedBlock  Int
+  updatedAt           DateTime @updatedAt
+}
+
+model QueueJob {
+  id          String   @id @default(cuid())
+  eventType   String
+  escrowAddress String
+  blockNumber Int
+  logIndex    Int
+  rawData     String   // JSON string
+  status      String   // "queued", "processing", "completed", "failed", "dead"
+  retryCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([blockNumber, logIndex])
+}
